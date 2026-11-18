@@ -1,0 +1,5 @@
+{
+  "global": {
+    "cmd-w": "agent-watch.close"
+  }
+}

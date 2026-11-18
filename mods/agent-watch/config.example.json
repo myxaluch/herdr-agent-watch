@@ -1,0 +1,85 @@
+{
+  "interval": 300,
+  "vars": {
+    "repos": [
+      {
+        "name": "app",
+        "repo": "your-org/your-repo",
+        "base": "main",
+        "repo_dir": "~/code/your-repo",
+        "clone_dirs": ["~/code/your-repo"],
+        "worktrees_dir": ".worktrees",
+        "terminal_prefix": "",
+        "slot_pool": "github-review",
+        "review_docs": "`AGENTS.md`, `docs/code_review.md`, and every doc `AGENTS.md` names for the touched area",
+        "replies_docs": "`AGENTS.md` and `docs/code_review.md`",
+        "fix_notes": "create worktrees as `docs/worktrees.md` says; run `make test` and `make lint` on the changed files"
+      }
+    ],
+    "review_slots": 3,
+    "reviews_dir": "~/.agent-watch/reviews",
+    "replies_dir": "~/.agent-watch/replies",
+    "github_login": "",
+    "output_language": "English",
+    "comment_language": "English",
+    "commands": {
+      "fix": "fix",
+      "commit": "commit",
+      "reply": "reply",
+      "recheck": "check new",
+      "submit": "submit"
+    },
+    "agents": {
+      "reviewer": "claude --permission-mode auto --model opus --effort high",
+      "replies": "claude --permission-mode auto --model sonnet",
+      "crosscheck": "codex --no-daemon -s workspace-write --add-dir {{reviews_dir}} -a never"
+    },
+    "notes": {
+      "reviewer": "",
+      "replies": "",
+      "crosscheck": ""
+    }
+  },
+  "notify": {
+    "terminal_notifier": ""
+  },
+  "rules": [
+    {
+      "name": "github-review-approved",
+      "file": "github-pr.sh",
+      "enabled": true,
+      "description": "I approved a PR under review: stop pr-<n> and its Codex, remove the review slot worktree"
+    },
+    {
+      "name": "github-review-requested",
+      "file": "github-pr.sh",
+      "enabled": true,
+      "description": "My review is requested: check the PR out in a free slot and start the reviewer",
+      "config": {
+        "template": "pr-reviewer",
+        "skip_authors": "\\[bot\\]$|^dependabot|^app/"
+      }
+    },
+    {
+      "name": "github-my-pr-comments",
+      "file": "github-pr.sh",
+      "enabled": true,
+      "description": "Others commented on my PR: start pr-replies-<n> in the branch worktree, or ping it",
+      "config": {
+        "template": "pr-replies"
+      }
+    },
+    {
+      "name": "github-my-pr-merged",
+      "file": "github-pr.sh",
+      "enabled": true,
+      "description": "My PR merged: stop pr-replies-<n>, remove its clean branch worktree and branch"
+    },
+    {
+      "name": "github-my-pr-conflicts",
+      "file": "github-pr.sh",
+      "enabled": true,
+      "description": "My open PR conflicts with its base: one banner when the conflict appears, one when it is gone"
+    }
+  ]
+}
