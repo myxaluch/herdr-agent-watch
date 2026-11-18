@@ -144,3 +144,7 @@ Every agent started with `spawn` carries the label `agent-watch=1` and shows in 
 - macOS only.
 - The reviewer always asks Codex for a cross-check. When Codex does not answer, the reviewer goes on without it and says so.
 - When the mod folder is renamed, change `MOD` in `titlebar.js` to the new name.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
