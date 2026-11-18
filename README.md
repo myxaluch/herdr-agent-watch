@@ -1,6 +1,8 @@
 # agent-watch
 
-A Herdr mod that watches GitHub and starts coding agents for you. When someone requests your review, Claude reviews the PR in its own worktree, Codex cross-checks the review, and a pending review waits for you on GitHub. When someone comments on your PR, Claude triages the comments and drafts fixes and replies. Nothing is posted or pushed until you say so.
+A Herdr mod that starts coding agents when something happens. A background watcher runs your rules every few minutes; a rule checks something (a review request, a failed build, a new ticket) and starts an agent with a task, in its own worktree when it needs one. You see every agent it started in a strip at the bottom of the window.
+
+It ships with rules for GitHub pull requests: Claude reviews the PRs that ask for your review and Codex cross-checks the review, and Claude triages new comments on your own PRs. Nothing is posted or pushed until you say so. Other sources are a rule away: see [Your own rule](#your-own-rule).
 
 ![agent-watch](preview.png)
 
@@ -8,7 +10,9 @@ A Herdr mod that watches GitHub and starts coding agents for you. When someone r
 
 A 24px strip at the bottom of the window shows the watcher and every agent it started. Click an agent to open it in a window; the window's title bar has an `End` button that stops the agent and its helpers.
 
-The watcher is a shell loop (`engine.sh`) that runs rules every 5 minutes:
+The watcher is a shell loop (`engine.sh`) that runs the rules listed in your config every 5 minutes.
+
+## Shipped rules: GitHub
 
 | Rule | When | What happens |
 |---|---|---|
@@ -24,10 +28,16 @@ A worktree with uncommitted changes, local commits that are not in the PR, or a 
 
 - macOS (the scripts use BSD `stat` and `date`, and `osascript`)
 - [Herdr](https://herdr.dev) with `hc` and `herdr-app` on `PATH`
-- `gh`, logged in (`gh auth login`) with access to the watched repos
 - `jq`, `git`, `bash`
+- `gh`, logged in (`gh auth login`) with access to the watched repos
+
+For the shipped GitHub rules:
+
 - [Claude Code](https://claude.com/claude-code) (`claude`) for the reviewer and the triage agent
 - [Codex](https://github.com/openai/codex) (`codex`) for the cross-check
+
+Your own rules may start any agent `hc` can run.
+
 - Optional: `terminal-notifier` (`brew install terminal-notifier`) for banners that open the agent on click. Without it banners come from `osascript` and are not clickable.
 
 ## What it touches outside its folder
@@ -139,9 +149,48 @@ A rule is a shell function `rule_<name with - as _>` in `rules/<file>`, listed i
 
 Every agent started with `spawn` carries the label `agent-watch=1` and shows in the strip; the label `aw.title=<text>` names it there.
 
+An example, one agent per failed CI run of yours:
+
+```sh
+# rules/ci.sh
+rule_ci_failed() {
+  local seen id branch url
+  seen="$(rule_state)/seen.txt"; touch "$seen"
+  gh run list --repo "$(rule_cfg repo)" --user "$(gh api user --jq .login)" --status failure --limit 5 \
+      --json databaseId,headBranch,url --jq '.[] | [.databaseId, .headBranch, .url] | @tsv' |
+    while IFS=$'\t' read -r id branch url; do
+      grep -qx "$id" "$seen" && continue
+      spawn "ci-$id" "$(rule_cfg repo_dir)" "$(rule_cfg template)" \
+        "CI run $url failed on branch $branch. Find the cause and propose a fix. Do not push." \
+        "aw.title=ci $branch" && echo "$id" >> "$seen"
+    done
+}
+```
+
+```json
+{ "name": "ci-failed", "file": "ci.sh", "enabled": true,
+  "config": { "repo": "your-org/your-repo", "repo_dir": "~/code/your-repo", "template": "ci-fixer" } }
+```
+
+`template` is an `hc` template of yours (`~/.config/herdr-core/templates/ci-fixer.md`): the agent's command line and its standing instructions. Try a new rule with `bash engine.sh --dry-run --once ci-failed`.
+
+### Ideas for rules
+
+None of these ship with the mod; each is a rule like the one above.
+
+- A ticket is assigned to you in Jira or Linear: an agent drafts a plan in a new worktree.
+- A new error appears in Sentry or Rollbar: an agent looks for the cause and rates it.
+- A dependency bot opens a PR: an agent reads the changelog and checks the callers.
+- You are mentioned in a chat thread: an agent drafts the answer.
+- On a schedule: triage of flaky tests every night, a sweep of stale branches every week.
+- GitLab merge requests in place of GitHub pull requests.
+- Notify only, no agent: a red build, a stuck deploy, a quota that ran out.
+
 ## Limits
 
 - macOS only.
+- Rules are polled, every `interval` seconds. There are no webhooks.
+- The watcher asks for `gh` and a `gh` login at start, even when no GitHub rule is enabled.
 - The reviewer always asks Codex for a cross-check. When Codex does not answer, the reviewer goes on without it and says so.
 - When the mod folder is renamed, change `MOD` in `titlebar.js` to the new name.
 
