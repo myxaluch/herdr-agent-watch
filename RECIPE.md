@@ -1,6 +1,6 @@
 # agent-watch
 
-A thin strip at the bottom of the window lists the coding agents that a background watcher started for GitHub work: reviews of pull requests that ask for the person's review, and triage of new comments on the person's own pull requests. A click opens an agent in a floating window with a title bar that can end it.
+A thin strip at the bottom of the window lists the coding agents that a background watcher started when something happened. The watcher runs rules every few minutes; the shipped rules start a review for each pull request that asks for the person's review and a triage of new comments on the person's own pull requests, and a new rule is a few lines of shell. A click opens an agent in a floating window with a title bar that can end it.
 
 ![agent-watch](preview.png)
 
