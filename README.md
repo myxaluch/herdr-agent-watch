@@ -24,6 +24,16 @@ The watcher is a shell loop (`engine.sh`) that runs the rules listed in your con
 
 A worktree with uncommitted changes, local commits that are not in the PR, or a live terminal inside it is never removed: you get one warning instead.
 
+## How it differs
+
+Other Herdr mods work near this one. Going by their gallery descriptions in November 2026:
+
+- PR panels such as [PR Reviews](https://github.com/NikosTsompanides/herdr-pr-reviews), [Herdr Ranch](https://github.com/jslowack/herdr-ranch), [GitHub](https://github.com/mrolafsson/herdr-github) and [Ray PRs](https://github.com/speardragon/herdr-ray) list your pull requests and start an agent when you click. agent-watch has no panel: the agent starts when GitHub changes, and you get a banner when its result is ready.
+- [Automations](https://github.com/dougcunha/herdr-mods) starts an agent on a trigger you set up in a form: a schedule, a button, an agent status, a file or git change. Here a rule is a shell function, so the trigger is whatever a command can check, and the rule gets ready-made slot pools and worktree handling.
+- Schedulers such as [herdr-automations](https://github.com/DnzzL/herdr-automations) and [Scheduler](https://github.com/kimsuhan/herdr-scheduler) start agents at set times. agent-watch polls for events instead.
+
+agent-watch also cleans up after itself: when you approve a PR or your own PR merges, it stops the agents and removes the worktree, unless work would be lost.
+
 ## Requirements
 
 - macOS (the scripts use BSD `stat` and `date`, and `osascript`)
