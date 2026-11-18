@@ -35,15 +35,23 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# github_rules_enabled — true when an enabled rule comes from a rules/github*.sh file.
+github_rules_enabled() {
+  jq -e '[.rules[]? | select(.enabled != false) | .file // "" | select(startswith("github"))] | length > 0' "$AW_CONFIG" >/dev/null 2>&1
+}
+
 # setup_problem — why the engine cannot run yet, or nothing.
 setup_problem() {
   local c f
-  for c in jq hc gh git; do
+  for c in jq hc git; do
     command -v "$c" >/dev/null 2>&1 || { echo "$c is not installed or not on PATH"; return; }
   done
   [ -f "$AW_CONFIG" ] || { echo "no config: copy $AW_HOME/config.example.json to $AW_CONFIG and edit it"; return; }
   jq -e . "$AW_CONFIG" >/dev/null 2>&1 || { echo "$AW_CONFIG is not valid JSON"; return; }
-  gh auth status >/dev/null 2>&1 || { echo "gh is not logged in: run gh auth login"; return; }
+  if github_rules_enabled; then
+    command -v gh >/dev/null 2>&1 || { echo "gh is not installed or not on PATH, and a GitHub rule is enabled"; return; }
+    gh auth status >/dev/null 2>&1 || { echo "gh is not logged in: run gh auth login"; return; }
+  fi
   for f in $(jq -r '[.rules[] | select(.enabled != false) | .file] | unique[]' "$AW_CONFIG"); do
     [ -f "$AW_HOME/rules/$f" ] || { echo "config names rules/$f, which does not exist"; return; }
   done
@@ -68,7 +76,7 @@ if dry; then
   trap 'rm -rf "$tmp"' EXIT
 fi
 
-if ! bash "$AW_HOME/render-templates.sh"; then
+if github_rules_enabled && ! bash "$AW_HOME/render-templates.sh"; then
   log "templates were not rendered: agents may start from stale or missing templates"
   [ -z "$once" ] && notify "agent-watch" "Templates were not rendered, open the agent-watch log"
 fi

@@ -37,7 +37,7 @@ A thin strip at the bottom of the window lists the coding agents that a backgrou
 
 - Herdr reloads a mod when a file in its folder is saved. State or a config inside the folder would reload the strip on every tick, so both live outside.
 - `herdr-app check` runs `init` for real. Starting the watcher is behind `checking()`, or every check would start one.
-- `hc` reads templates only from `~/.config/herdr-core/templates/` and substitutes nothing; the render step is required before the first agent starts.
+- `hc` reads templates only from `~/.config/herdr-core/templates/` and substitutes nothing; the render step is required before the first agent starts. It runs only while a rule from a `rules/github*.sh` file is enabled, and only then does the watcher ask for `gh`.
 - A banner must come from a real `terminal-notifier` binary. A version-manager shim fails outside a project folder, and an `osascript` banner opens Script Editor on click.
 - A mod sees `terminal.labels`, but `herdr-app check` gets an empty `terminals()`: verify the strip against a live labelled terminal (`hc run --bg --label agent-watch=1 --label aw.title=test sleep 600`).
 - The watcher that ends at once would be restarted every minute and leave a pile of finished terminals. On a setup problem `engine.sh` stays alive, logs the problem and retries every 30 seconds.

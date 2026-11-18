@@ -29,10 +29,10 @@ A worktree with uncommitted changes, local commits that are not in the PR, or a 
 - macOS (the scripts use BSD `stat` and `date`, and `osascript`)
 - [Herdr](https://herdr.dev) with `hc` and `herdr-app` on `PATH`
 - `jq`, `git`, `bash`
-- `gh`, logged in (`gh auth login`) with access to the watched repos
 
 For the shipped GitHub rules:
 
+- `gh`, logged in (`gh auth login`) with access to the watched repos
 - [Claude Code](https://claude.com/claude-code) (`claude`) for the reviewer and the triage agent
 - [Codex](https://github.com/openai/codex) (`codex`) for the cross-check
 
@@ -70,7 +70,7 @@ Tell the person before installing. The mod:
 
 4. Optional: merge `keys.json`. It binds `cmd-w` to `agent-watch.close`, which closes the agent window that has the keyboard and falls back to `tab.close`.
 
-The mod starts the watcher as terminal `agent-watch` and restarts it within a minute when it ends. While something is missing (a program, the config, the `gh` login), the watcher says what in its log and waits. Click `agent-watch` in the strip to read the log.
+The mod starts the watcher as terminal `agent-watch` and restarts it within a minute when it ends. While something is missing (a program, the config, the `gh` login when a GitHub rule is enabled), the watcher says what in its log and waits. Click `agent-watch` in the strip to read the log.
 
 Try it without side effects:
 
@@ -131,7 +131,7 @@ When a worktree needs a teardown before removal (containers, a dev database):
 
 ## Templates
 
-`mods/agent-watch/templates/*.md` are the agent instructions with `{{parameters}}`. The watcher renders them into `~/.config/herdr-core/templates/` when it starts, because `hc` reads templates only there and substitutes nothing.
+`mods/agent-watch/templates/*.md` are the agent instructions with `{{parameters}}`. The watcher renders them into `~/.config/herdr-core/templates/` when it starts with a GitHub rule enabled, because `hc` reads templates only there and substitutes nothing.
 
 To change the instructions beyond the parameters, copy a template to `~/.config/herdr-core/agent-watch/templates/<name>.md` and edit the copy. It replaces the shipped one and may use the same parameters: `reviewer_command`, `replies_command`, `crosscheck_command`, `reviews_dir`, `github_login`, `output_language`, `comment_language`, `cmd_fix`, `cmd_commit`, `cmd_reply`, `cmd_recheck`, `cmd_submit`, `repos_review`, `repos_replies`, `repos_fix`, `reviewer_notes`, `replies_notes`, `crosscheck_notes`, `notify`.
 
@@ -190,7 +190,6 @@ None of these ship with the mod; each is a rule like the one above.
 
 - macOS only.
 - Rules are polled, every `interval` seconds. There are no webhooks.
-- The watcher asks for `gh` and a `gh` login at start, even when no GitHub rule is enabled.
 - The reviewer always asks Codex for a cross-check. When Codex does not answer, the reviewer goes on without it and says so.
 - When the mod folder is renamed, change `MOD` in `titlebar.js` to the new name.
 
